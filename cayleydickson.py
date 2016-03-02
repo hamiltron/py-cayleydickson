@@ -46,16 +46,16 @@ class Construction(object):
 
     def __getitem__(self, key):
         self._index_check(key)
-        new_idx = key % (order / 2)
-        if key < order / 2:
+        new_idx = key % (self.order / 2)
+        if key < self.order / 2:
             return self.a[new_idx]
         else:
             return self.b[new_idx]
 
     def __setitem__(self, key, value):
         self._index_check(key)
-        new_idx = key % (order / 2)
-        if key < order / 2:
+        new_idx = key % (self.order / 2)
+        if key < self.order / 2:
             self.a[new_idx] = value
         else:
             self.b[new_idx] = value
@@ -80,6 +80,12 @@ class Construction(object):
         clone.b = self.b - other.b
         return clone
 
+    def __repr__(self):
+        coeffs = []
+        for idx in range(self.order):
+            coeffs.append(self[idx])
+        return str(coeffs)
+
 class Complex(Construction):
 
     def __init__(self, a=0, b=0):
@@ -102,7 +108,7 @@ class Complex(Construction):
         if key == 0:
             self.a = float(value)
         elif key == 1:
-            return self.b = float(value)
+            self.b = float(value)
 
     def __mul__(self, other):
         clone = deepcopy(self)
@@ -111,3 +117,22 @@ class Complex(Construction):
         clone.a = self.a * other.a - other.b * self.b
         clone.b = self.a * other.b + other.a * self.b
         return clone
+
+if __name__ == "__main__":
+    b = []
+    for i in range(4):
+        cd = Construction.construct()
+        cd[i] = 1
+        print(str(cd))
+        b.append(cd)
+
+    expected = [[b[0], b[1], b[2], b[3]],
+                [b[1], -b[0], b[3], -b[2]],
+                [b[2], -b[3], -b[0], b[1]],
+                [b[3], b[2], -b[1], -b[0]]]
+
+    for row in range(4):
+        for col in range(4):
+            val = b[col] * b[row]
+            exp = expected[row][col]
+            assert val == exp
