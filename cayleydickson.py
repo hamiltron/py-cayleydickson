@@ -32,7 +32,8 @@ class Construction(object):
         conjugate
         """
         clone = deepcopy(self)
-        return clone._in_place_c()
+        clone._c()
+        return clone
 
     def _c(self):
         self.a = self.a._c()
@@ -62,10 +63,10 @@ class Construction(object):
 
     def __mul__(self, other):
         clone = deepcopy(self)
-        # (a, b)(c, d) = (ac - db*, a*d + cb)
+        # (a, b)(c, d) = (ac - d*b, da + bc*)
         # this is (a, b)
-        clone.a = self.a * other.a - other.b * self.b.c()
-        clone.b = self.a.c() * other.b + other.a * self.b
+        clone.a = self.a * other.a - other.b.c() * self.b
+        clone.b = other.b * self.a + self.b * other.a.c()
         return clone
 
     def __add__(self, other):
@@ -79,6 +80,18 @@ class Construction(object):
         clone.a = self.a - other.a
         clone.b = self.b - other.b
         return clone
+
+    def __neg__(self):
+        clone = deepcopy(self)
+        clone.a = -(self.a)
+        clone.b = -(self.b)
+        return clone
+
+    def __eq__(self, other):
+        return self.a == other.a and self.b == other.b
+
+    def __ne__(self, other):
+        return not self == other
 
     def __repr__(self):
         coeffs = []
@@ -94,7 +107,7 @@ class Complex(Construction):
         self.order = 2
 
     def _c(self):
-        self.b = -(self.a)
+        self.b = -(self.b)
 
     def __getitem__(self, key):
         self._index_check(key)
@@ -119,11 +132,24 @@ class Complex(Construction):
         return clone
 
 if __name__ == "__main__":
+    one = Construction.construct(2)
+    one[0] = 1
+    unit_i = Construction.construct(2)
+    unit_i[1] = 1
+
+    assert one * one == one
+    assert one * unit_i == unit_i
+    assert unit_i * one == unit_i
+    assert unit_i * unit_i == -(one)
+    assert -(one) * unit_i == -(unit_i)
+    assert (one + unit_i )[0] == 1
+    assert (one + unit_i )[1] == 1
+
+    # quaternions
     b = []
     for i in range(4):
         cd = Construction.construct()
         cd[i] = 1
-        print(str(cd))
         b.append(cd)
 
     expected = [[b[0], b[1], b[2], b[3]],
@@ -133,6 +159,9 @@ if __name__ == "__main__":
 
     for row in range(4):
         for col in range(4):
-            val = b[col] * b[row]
+            val = b[row] * b[col]
             exp = expected[row][col]
-            assert val == exp
+            try:
+                assert val == exp
+            except AssertionError as e:
+                print("r {} c {} ... {} * {} should be {}, is {}".format(row, col, b[row], b[col], exp, val))
