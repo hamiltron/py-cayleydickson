@@ -7,7 +7,7 @@ from copy import deepcopy
 class Construction(object):
 
     @classmethod
-    def construct(cls, order=4):
+    def construct(cls, order):
         log_2 = math.log(order, 2)
         if log_2 < 1 or int(log_2) != log_2:
             raise ValueError("'order' must two or higher and a power of two.")
@@ -32,12 +32,9 @@ class Construction(object):
         conjugate
         """
         clone = deepcopy(self)
-        clone._c()
+        clone.a = self.a.c()
+        clone.b = -(self.b)
         return clone
-
-    def _c(self):
-        self.a = self.a._c()
-        self.b = -(self.b)
 
     def _index_check(self, key):
         if int(key) != key:
@@ -94,6 +91,7 @@ class Construction(object):
         return not self == other
 
     def __repr__(self):
+        return "({}, {})".format(str(self.a), str(self.b))
         coeffs = []
         for idx in range(self.order):
             coeffs.append(self[idx])
@@ -106,8 +104,10 @@ class Complex(Construction):
         self.b = float(b)
         self.order = 2
 
-    def _c(self):
-        self.b = -(self.b)
+    def c(self):
+        clone = deepcopy(self)
+        clone.b = -(self.b)
+        return clone
 
     def __getitem__(self, key):
         self._index_check(key)
@@ -131,6 +131,21 @@ class Complex(Construction):
         clone.b = self.a * other.b + other.a * self.b
         return clone
 
+# ----------------- testing -------------------------
+
+def compare_mul_table(bases, table):
+    order = len(bases)
+    for row in range(order):
+        for col in range(order):
+            val = bases[row] * bases[col]
+            exp = expected[row][col]
+            try:
+                assert val == exp
+            except AssertionError as e:
+                print("r {} c {} ... {} * {} should be {}, is {}".format(
+                        row, col, bases[row], bases[col], exp, val))
+                raise
+
 if __name__ == "__main__":
     one = Construction.construct(2)
     one[0] = 1
@@ -146,22 +161,40 @@ if __name__ == "__main__":
     assert (one + unit_i )[1] == 1
 
     # quaternions
-    b = []
+    q = []
     for i in range(4):
-        cd = Construction.construct()
+        cd = Construction.construct(4)
         cd[i] = 1
-        b.append(cd)
+        q.append(cd)
 
-    expected = [[b[0], b[1], b[2], b[3]],
-                [b[1], -b[0], b[3], -b[2]],
-                [b[2], -b[3], -b[0], b[1]],
-                [b[3], b[2], -b[1], -b[0]]]
+    assert (q[0] + q[1])[0] == 1
+    assert (q[0] + q[1])[1] == 1
+    assert (q[0] + q[1])[2] == 0
+    assert (q[0] + q[1])[3] == 0
+    assert (q[0] + q[2])[2] == 1
+    assert (q[0] + q[3])[3] == 1
 
-    for row in range(4):
-        for col in range(4):
-            val = b[row] * b[col]
-            exp = expected[row][col]
-            try:
-                assert val == exp
-            except AssertionError as e:
-                print("r {} c {} ... {} * {} should be {}, is {}".format(row, col, b[row], b[col], exp, val))
+    expected = [[q[0], q[1], q[2], q[3]],
+                [q[1], -q[0], q[3], -q[2]],
+                [q[2], -q[3], -q[0], q[1]],
+                [q[3], q[2], -q[1], -q[0]]]
+
+    compare_mul_table(q, expected)
+
+    # octonians
+    o = []
+    for i in range(8):
+        cd = Construction.construct(8)
+        cd[i] = 1
+        o.append(cd)
+
+    expected = [[o[0], o[1], o[2], o[3], o[4], o[5], o[6], o[7]],
+                [o[1], -o[0], o[3], -o[2], o[5], -o[4], -o[7], o[6]],
+                [o[2], -o[3], -o[0], o[1], o[6], o[7], -o[4], -o[5]],
+                [o[3], o[2], -o[1], -o[0], o[7], -o[6], o[5], -o[4]],
+                [o[4], -o[5], -o[6], -o[7], -o[0], o[1], o[2], o[3]],
+                [o[5], o[4], -o[7], o[6], -o[1], -o[0], -o[3], o[2]],
+                [o[6], o[7], o[4], -o[5], -o[2], o[3], -o[0], -o[1]],
+                [o[7], -o[6], o[5], o[4], -o[3], -o[2], o[1], -o[0]]]
+
+    compare_mul_table(o, expected)
