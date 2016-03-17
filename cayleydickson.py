@@ -7,6 +7,18 @@ from copy import deepcopy
 class Construction(object):
 
     @classmethod
+    def Complex(cls):
+        return Construction.construct(2)
+
+    @classmethod
+    def Quaternion(cls):
+        return Construction.construct(4)
+
+    @classmethod
+    def Octonian(cls):
+        return Construction.construct(8)
+
+    @classmethod
     def construct(cls, order):
         log_2 = math.log(order, 2)
         if log_2 < 1 or int(log_2) != log_2:
@@ -35,6 +47,24 @@ class Construction(object):
         clone.a = self.a.c()
         clone.b = -(self.b)
         return clone
+
+    def rot(self, other):
+        return other * self * other.c()
+
+    def mag(self):
+        component_sum = 0
+        for idx in range(self.order):
+            component_sum += self[idx] ** 2
+        return math.sqrt(component_sum)
+
+    def scale(self, scale):
+        clone = deepcopy(self)
+        for idx in range(self.order):
+            clone[idx] *= scale
+        return clone
+
+    def norm(self):
+        return self.scale(1.0 / self.mag())
 
     def _index_check(self, key):
         if int(key) != key:
