@@ -7,18 +7,6 @@ from copy import deepcopy
 class Construction(object):
 
     @classmethod
-    def Complex(cls):
-        return Construction.construct(2)
-
-    @classmethod
-    def Quaternion(cls):
-        return Construction.construct(4)
-
-    @classmethod
-    def Octonian(cls):
-        return Construction.construct(8)
-
-    @classmethod
     def construct(cls, order):
         log_2 = math.log(order, 2)
         if log_2 < 1 or int(log_2) != log_2:
@@ -48,14 +36,8 @@ class Construction(object):
         clone.b = -(self.b)
         return clone
 
-    def rot(self, other):
-        return other * self * other.c()
-
     def mag(self):
-        component_sum = 0
-        for idx in range(self.order):
-            component_sum += self[idx] ** 2
-        return math.sqrt(component_sum)
+        return math.sqrt(self.norm())
 
     def scale(self, scale):
         clone = deepcopy(self)
@@ -64,7 +46,16 @@ class Construction(object):
         return clone
 
     def norm(self):
-        return self.scale(1.0 / self.mag())
+        norm_sum = 0
+        for idx in range(self.order):
+            norm_sum += self[idx] ** 2
+        return norm_sum
+
+    def inv(self):
+        return self.c().scale(1.0 / self.norm())
+
+    def rot(self, other):
+        return other * self * other.inv()
 
     def _index_check(self, key):
         if int(key) != key:
@@ -122,10 +113,7 @@ class Construction(object):
 
     def __repr__(self):
         return "({}, {})".format(str(self.a), str(self.b))
-        coeffs = []
-        for idx in range(self.order):
-            coeffs.append(self[idx])
-        return str(coeffs)
+
 
 class Complex(Construction):
 
@@ -160,6 +148,36 @@ class Complex(Construction):
         clone.a = self.a * other.a - other.b * self.b
         clone.b = self.a * other.b + other.a * self.b
         return clone
+
+    def __repr__(self):
+        return "({:.3f}, {:.3f})".format(self.a, self.b)
+
+
+def Quaternion():
+    return Construction.construct(4)
+
+
+def Octonian():
+    return Construction.construct(8)
+
+
+def quaternion_vector(x, y, z):
+    q = Quaternion()
+    q[1] = x
+    q[2] = y
+    q[3] = z
+    return q
+
+def quaternion_rotation(angle, x, y, z):
+    q = Quaternion()
+    half_angle = angle / 2.0
+    vector_scale = math.sin(half_angle)
+    q[0] = math.cos(half_angle)
+    q[1] = x * vector_scale
+    q[2] = y * vector_scale
+    q[3] = z * vector_scale
+    return q
+
 
 # ----------------- testing -------------------------
 
