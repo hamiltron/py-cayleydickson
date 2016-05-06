@@ -161,23 +161,38 @@ def Octonian():
     return Construction.construct(8)
 
 
-def quaternion_vector(x, y, z):
+def q_vector(x, y, z):
     q = Quaternion()
     q[1] = x
     q[2] = y
     q[3] = z
     return q
 
-def quaternion_rotation(angle, x, y, z):
+
+def q_rotation(angle, x, y, z):
+    vec_mag = math.sqrt(x ** 2 + y ** 2 + z ** 2)
     q = Quaternion()
     half_angle = angle / 2.0
     vector_scale = math.sin(half_angle)
     q[0] = math.cos(half_angle)
-    q[1] = x * vector_scale
-    q[2] = y * vector_scale
-    q[3] = z * vector_scale
+    q[1] = x * vector_scale / vec_mag
+    q[2] = y * vector_scale / vec_mag
+    q[3] = z * vector_scale / vec_mag
     return q
 
+
+def q_rotation_between(q1, q2):
+    if (q1.order != 4 or q2.order != 4):
+        raise ValueError("Both parameters must be quaternions")
+    q1[0] = 0
+    q2[0] = 0
+    dot = q1[1] * q2[1] + q1[2] * q2[2] + q1[3] * q2[3]
+    angle = math.acos(dot / q1.mag() / q2.mag())
+    x = q1[2] * q2[3] - q1[3] * q2[2]
+    y = q1[3] * q2[1] - q1[1] * q2[3]
+    z = q1[1] * q2[2] - q1[2] * q2[1]
+    # this will handle normalization
+    return q_rotation(angle, x, y, z)
 
 # ----------------- testing -------------------------
 
